@@ -327,7 +327,7 @@
                         <span class="badge">Tìm người</span>
                         <h4>Người thất lạc: ${item.target_name ? item.target_name.toUpperCase() : 'KHÔNG RÕ TÊN'} ${item.target_nickname ? `(${item.target_nickname})` : ''}</h4>
                         <div class="meta-grid">
-                            <p><strong>Ngày sinh:</strong> ${String(item.target_birthyear).replace('T', ' ').split(' ')[0] || 'Chưa rõ'}</p>
+                            <p><strong>Ngày sinh:</strong> ${formatDate(item.target_birthyear)}</p>
                             <p><strong>Quê quán:</strong> ${item.target_province || 'Chưa rõ'}</p>
                             <p><strong>Cha/Mẹ:</strong> ${item.father_name || 'Chưa rõ'} / ${item.mother_name || 'Chưa rõ'}</p>
                             <p><strong>Nơi thất lạc:</strong> ${item.lost_province || 'Chưa rõ'} ${item.lost_year ? `(Năm ${item.lost_year})` : ''}</p>
