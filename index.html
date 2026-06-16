@@ -145,10 +145,10 @@
                         <label>Tên thường gọi / Biệt danh</label>
                         <input type="text" id="target_nickname" placeholder="Ví dụ: Cu Tí, Bé Hai...">
                     </div>
-                    <div class="form-group">
-                        <label>Ngày tháng năm sinh (hoặc khoảng năm sinh)</label>
-                        <input type="text" id="target_birthyear" placeholder="Ví dụ: 15/08/1985 hoặc Khoảng 1980-1983">
-                    </div>
+                <div class="form-group">
+    <label>Ngày tháng năm sinh (Chọn ngày hoặc điền năm nếu không rõ)</label>
+    <input type="text" id="target_birthyear" placeholder="Ví dụ: 15/08/1985 hoặc Khoảng 1980-1983" onfocus="(this.type='date')" onblur="if(!this.value) this.type='text'">
+</div>
                     <div class="form-group">
                         <label>Quê quán gốc (Tỉnh/Thành phố)</label>
                         <input type="text" id="target_province" placeholder="Người dùng tự điền (VD: Nghệ An, Hà Nội...)">
