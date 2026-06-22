@@ -72,9 +72,9 @@
         .card-body { flex-grow: 1; position: relative; display: flex; flex-direction: column; }
         
         .badge { position: absolute; top: 0; right: 0; padding: 4px 10px; border-radius: 12px; color: white; font-size: 11px; font-weight: bold; text-transform: uppercase; background: var(--red-btn); }
-        .card h4 { margin: 0 0 12px 0; font-size: 16px; color: var(--primary); border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px; padding-right: 90px; }
+        .card h4 { margin: 0 0 6px 0; font-size: 16px; color: var(--primary); padding-right: 90px; }
         .card p { margin: 4px 0; font-size: 14px; color: #4a5568; }
-        .card .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 15px; margin-bottom: 10px; }
+        .card .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 15px; margin-bottom: 10px; border-top: 1px dashed #e2e8f0; padding-top: 10px;}
         @media (max-width: 500px) { .card .meta-grid { grid-template-columns: 1fr; } }
         
         .contact-instruction-box { background: #ebf8ff; border: 1px solid #bee3f8; padding: 10px 12px; border-radius: 4px; margin-top: 10px; font-size: 13px; color: #2b6cb0; font-weight: 500; line-height: 1.4; }
@@ -84,13 +84,16 @@
 
         .preview-container { margin-top: 5px; display: none; }
         .preview-img { max-width: 100px; max-height: 130px; object-fit: cover; border: 1px solid #cbd5e0; border-radius: 4px; }
+        
+        .status-pill { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; margin-bottom: 10px; }
+        .status-searching { background-color: #dd6b20; } /* Màu cam */
+        .status-found { background-color: #38a169; } /* Màu xanh lá */
     </style>
 </head>
 <body>
 
     <header>
-          <h1>HÀNH TRÌNH TRỞ VỀ</h1>
-        <h1>ĐĂNG TIN TÌM KIẾM NGƯỜI THÂN THẤT LẠC</h1>
+        <h1>ĐĂNG TIN TÌM KIẾM NGƯỜI THÂN</h1>
         <p>Biểu mẫu cung cấp thông tin thất lạc, ly tán - Đối chiếu hệ thống tự động</p>
     </header>
 
@@ -98,7 +101,7 @@
         
         <!-- Mục nổi bật đầu trang -->
         <div class="info-banner">
-            🕊️ Tìm kiếm và đoàn tụ người thân thất lạc nhằm mục đích nhân đạo và hoàn toàn miễn phí.
+            🕊️ Tìm kiếm và đoàn tụ người thân nhằm mục đích nhân đạo và hoàn toàn miễn phí.
         </div>
         
         <!-- Khung báo kết quả đối chiếu tự động -->
@@ -111,11 +114,21 @@
         <div class="form-container">
             <form id="hayLenTiengForm" onsubmit="submitForm(event)">
                 
-                <div class="section-title first">1. MỤC ĐÍCH ĐĂNG TIN</div>
-                <div class="single-selector">
-                    🔴 TÔI MUỐN TÌM NGƯỜI THÂN
+                <div class="section-title first">1. MỤC ĐÍCH & TRẠNG THÁI</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="single-selector" style="padding: 10px;">
+                            🔴 TÔI MUỐN TÌM NGƯỜI THÂN
+                        </div>
+                        <input type="hidden" id="formType" value="find">
+                    </div>
+                    <div class="form-group">
+                        <select id="search_status" style="height: 100%; border: 2px solid var(--blue-btn); font-weight: bold; color: var(--blue-btn);">
+                            <option value="Chưa tìm thấy">Chưa tìm thấy (Đang tìm kiếm)</option>
+                            <option value="Đã tìm thành công">Đã tìm thành công</option>
+                        </select>
+                    </div>
                 </div>
-                <input type="hidden" id="formType" value="find">
 
                 <div class="section-title">2. THÔNG TIN NGƯỜI ĐĂNG TIN</div>
                 <div class="form-grid">
@@ -198,7 +211,7 @@
                 <div class="commitment-box">
                     <input type="checkbox" id="chkCommitment" required>
                     <label for="chkCommitment">
-                        Tôi cam kết thông tin trên hoàn toàn đúng sự thật, đồng thời cho phép chương trình sử dụng thông tin trên vào mục đích tìm kiếm và có thể xuất hiện ở các phương tiện truyền thông việc tìm kiếm tôi hiểu rằng sẽ khó khăn và tôi chấp nhận chờ đợi.
+                        Tôi cam kết thông tin trên hoàn toàn đúng sự thật, đồng thời cho phép chương trình sử dụng thông tin trên vào mục đích tìm kiếm và có thể xuất hiện ở các phương tiện truyền thông việc tìm kiếm tôi hiểu rằng sẽ khó khăn tôi chấp nhận chờ đợi.
                     </label>
                 </div>
 
@@ -346,11 +359,17 @@
                 const originalIndex = database.indexOf(item);
                 const profileCode = "01-" + String(originalIndex + 1).padStart(4, "0");
 
+                // Trạng thái tìm kiếm
+                const statusText = item.search_status || "Chưa tìm thấy";
+                const statusClass = statusText === "Đã tìm thành công" ? "status-found" : "status-searching";
+
                 card.innerHTML = `
                     <img src="${imgSrc}" class="card-img" alt="Ảnh chân dung">
                     <div class="card-body">
                         <span class="badge">Tìm người</span>
                         <h4>Người thất lạc: ${item.target_name ? item.target_name.toUpperCase() : 'KHÔNG RÕ TÊN'} ${item.target_nickname ? `(${item.target_nickname})` : ''}</h4>
+                        <div class="status-pill ${statusClass}">Trạng thái: ${statusText}</div>
+                        
                         <div class="meta-grid">
                             <p><strong>Ngày sinh:</strong> ${fixDate(item.target_birthyear)}</p>
                             <p><strong>Quê quán:</strong> ${item.target_province || 'Chưa rõ'}</p>
@@ -384,8 +403,9 @@
             btn.textContent = "HỆ THỐNG ĐANG LƯU HỒ SƠ LÊN ĐÁM MÂY...";
 
             const type = document.getElementById('formType').value;
+            const search_status = document.getElementById('search_status').value; // Lấy dữ liệu trạng thái
             const reporter_name = document.getElementById('reporter_name').value;
-            const reporter_birthyear = document.getElementById('reporter_birthyear').value; // Trường năm sinh người đăng
+            const reporter_birthyear = document.getElementById('reporter_birthyear').value;
             const reporter_phone = document.getElementById('reporter_phone').value;
             const reporter_relation = document.getElementById('reporter_relation').value;
             const reporter_address = document.getElementById('reporter_address').value;
@@ -399,7 +419,8 @@
             const lost_province = document.getElementById('lost_province').value;
             const lost_description = document.getElementById('lost_description').value;
 
-            const formData = { type, reporter_name, reporter_birthyear, reporter_phone, reporter_relation, reporter_address, target_name, target_nickname, target_birthyear, father_name, mother_name, target_province, lost_year, lost_province, lost_description, image_data: base64Image };
+            // Thêm trường search_status vào formData gửi đi
+            const formData = { type, search_status, reporter_name, reporter_birthyear, reporter_phone, reporter_relation, reporter_address, target_name, target_nickname, target_birthyear, father_name, mother_name, target_province, lost_year, lost_province, lost_description, image_data: base64Image };
 
             try {
                 await fetch(SCRIPT_URL, {
@@ -490,7 +511,7 @@
                 
                 alertDetails.innerHTML = `
                     <strong style="color: #e53e3e;">Hiện tại chưa có đối tượng trùng khớp trên hệ thống dữ liệu.</strong><br>
-                    Tuy nhiên, thông tin hồ sơ của bạn đã được lưu trữ an toàn trên hệ thống đám mây. Bản tin này sẽ liên tục tham gia vào bộ lọc tìm kiếm tự động khi có các người dùng mới đăng ký sau này. Đừng nản lòng, hành trình tìm kiếm luôn cần sự kiên nhẫn!
+                    Tuy nhiên, thông tin hồ sơ của bạn đã được lưu trữ vĩnh viễn và an toàn trên hệ thống đám mây. Bản tin này sẽ liên tục tham gia vào bộ lọc tìm kiếm tự động khi có các người dùng mới đăng ký sau này. Đừng nản lòng, hành trình tìm kiếm luôn cần sự kiên nhẫn!
                 `;
             }
             
