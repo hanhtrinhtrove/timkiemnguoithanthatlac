@@ -96,18 +96,15 @@
 
     <div class="container">
         
-        <!-- Mục nổi bật đầu trang -->
         <div class="info-banner">
             🕊️ Tìm kiếm và đoàn tụ người thân thất lạc nhằm mục đích nhân đạo và hoàn toàn miễn phí.
         </div>
         
-        <!-- Khung báo kết quả đối chiếu tự động -->
         <div id="matchAlert" class="match-alert">
             <h3 id="matchAlertHeader">🔔 HỆ THỐNG PHÁT HIỆN MANH MỐI TRÙNG KHỚP!</h3>
             <div id="matchDetails"></div>
         </div>
 
-        <!-- BIỂU MẪU ĐĂNG TIN -->
         <div class="form-container">
             <form id="hayLenTiengForm" onsubmit="submitForm(event)">
                 
@@ -123,7 +120,6 @@
                         <label>Họ và tên người đăng</label>
                         <input type="text" id="reporter_name" placeholder="Nhập họ tên của bạn (không bắt buộc)">
                     </div>
-                    <!-- Thêm trường năm sinh người đăng -->
                     <div class="form-group">
                         <label>Năm sinh người đăng</label>
                         <input type="text" id="reporter_birthyear" placeholder="Ví dụ: 1985 hoặc 15/08/1985">
@@ -194,7 +190,6 @@
                     </div>
                 </div>
 
-                <!-- Ô checkbox đồng ý cam kết điều khoản -->
                 <div class="commitment-box">
                     <input type="checkbox" id="chkCommitment" required>
                     <label for="chkCommitment">
@@ -202,7 +197,6 @@
                     </label>
                 </div>
 
-                <!-- Khung lưu ý cảnh giác lừa đảo -->
                 <div class="warning-box">
                     ⚠️ <strong>Lưu ý quan trọng:</strong> Hiện tại có rất nhiều đối tượng lừa đảo, anh/chị cần hết sức lưu ý và cảnh giác khi có người lạ chủ động gọi điện báo tin.
                 </div>
@@ -211,7 +205,6 @@
             </form>
         </div>
 
-        <!-- MỤC TRA CỨU CHỦ ĐỘNG -->
         <div class="search-section">
             <div class="search-title">🔍 TRA CỨU NHANH TRÊN HỆ THỐNG TRÙNG KHỚP</div>
             <div class="search-box-wrapper">
@@ -220,7 +213,6 @@
             </div>
         </div>
 
-        <!-- DANH SÁCH TIN ĐĂNG -->
         <div class="list-section">
             <div class="list-title" id="listHeading">DANH SÁCH TIN ĐĂNG TRÊN TOÀN HỆ THỐNG</div>
             <div id="cardContainer" class="card-container">
@@ -363,7 +355,6 @@
                             💡 <strong>Bạn biết manh mối về hồ sơ này?</strong> Để bảo vệ an toàn thông tin, vui lòng gửi mail về: <a href="mailto:lienhe.hanhtrinhtrove@gmail.com" class="contact-email-link">lienhe.hanhtrinhtrove@gmail.com</a>. Ban quản trị hành trình sẽ trực tiếp xác minh và cung cấp thông tin liên lạc kết nối hai bên.
                         </div>
                         
-                        <!-- Mã số hồ sơ cuối card -->
                         <div class="profile-code">Mã số hồ sơ: ${profileCode}</div>
                     </div>
                 `;
@@ -423,41 +414,39 @@
             const currentMother = cleanString(mother_name);
 
             database.forEach(item => {
-                // Chỉ đối chiếu chéo (Ví dụ: Bạn đang gửi đơn tìm kiếm, hệ thống sẽ dò trong kho)
-                if (item.type !== type) {
-                    let score = 0;
+                // Đã xóa điều kiện if (item.type !== type) để quét so khớp toàn bộ dữ liệu hệ thống
+                let score = 0;
 
-                    // 1. Xét Họ tên (Max 40%)
-                    if (currentName && item.target_name) {
-                        if (cleanString(item.target_name) === currentName) {
-                            score += 40;
-                        }
+                // 1. Xét Họ tên (Max 40%)
+                if (currentName && item.target_name) {
+                    if (cleanString(item.target_name) === currentName) {
+                        score += 40;
                     }
+                }
 
-                    // 2. Xét Quê quán (Max 30%)
-                    if (currentProvince && item.target_province) {
-                        if (cleanString(item.target_province) === currentProvince) {
-                            score += 30;
-                        }
-                    }
-
-                    // 3. Xét Tên Cha / Mẹ (Max 30%)
-                    let parentsMatch = false;
-                    if (currentFather && item.father_name && cleanString(item.father_name) === currentFather) {
-                        parentsMatch = true;
-                    }
-                    if (currentMother && item.mother_name && cleanString(item.mother_name) === currentMother) {
-                        parentsMatch = true;
-                    }
-                    if (parentsMatch) {
+                // 2. Xét Quê quán (Max 30%)
+                if (currentProvince && item.target_province) {
+                    if (cleanString(item.target_province) === currentProvince) {
                         score += 30;
                     }
+                }
 
-                    // Lưu lại kết quả của hồ sơ có % trùng cao nhất
-                    if (score > highestMatchScore) {
-                        highestMatchScore = score;
-                        bestMatchItem = item;
-                    }
+                // 3. Xét Tên Cha / Mẹ (Max 30%)
+                let parentsMatch = false;
+                if (currentFather && item.father_name && cleanString(item.father_name) === currentFather) {
+                    parentsMatch = true;
+                }
+                if (currentMother && item.mother_name && cleanString(item.mother_name) === currentMother) {
+                    parentsMatch = true;
+                }
+                if (parentsMatch) {
+                    score += 30;
+                }
+
+                // Lưu lại kết quả của hồ sơ có % trùng cao nhất
+                if (score > highestMatchScore) {
+                    highestMatchScore = score;
+                    bestMatchItem = item;
                 }
             });
 
