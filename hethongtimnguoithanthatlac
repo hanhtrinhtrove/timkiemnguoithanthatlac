@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Tổng Hợp & Tìm Kiếm Người Thân Thất Lạc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .active-tab {
+            border-bottom: 3px solid #1d4ed8;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-800 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-people-roof text-3xl text-amber-400"></i>
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">Hệ Thống Tìm Người Thân Thất Lạc</h1>
+                    <p class="text-xs text-blue-200">Công cụ tổng hợp, chuẩn hóa AI & kết nối thông tin</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <span class="bg-blue-900 text-blue-200 text-xs px-3 py-1.5 rounded-full flex items-center gap-1">
+                    <i class="fa-solid fa-database"></i> Dữ liệu: <span id="data-count" class="font-bold text-white">0</span> bản ghi
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 flex gap-6 overflow-x-auto">
+            <button onclick="switchTab('search')" id="tab-search" class="py-3 px-2 active-tab flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-magnifying-glass"></i> Tra Cứu & Bộ Lọc
+            </button>
+            <button onclick="switchTab('collector')" id="tab-collector" class="py-3 px-2 text-slate-600 hover:text-blue-700 flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Thu Thập Bài Viết (AI Extract)
+            </button>
+            <button onclick="switchTab('matcher')" id="tab-matcher" class="py-3 px-2 text-slate-600 hover:text-blue-700 flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-code-compare"></i> Thuật Toán So Khớp Tự Động
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- TAB 1: SEARCH & FILTER -->
+        <section id="view-search" class="space-y-6">
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Tổng số tin đăng</p>
+                        <h3 id="statTotal" class="text-2xl font-bold text-slate-800">0</h3>
+                    </div>
+                    <i class="fa-solid fa-folder-open text-blue-500 text-2xl"></i>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Chưa tìm thấy</p>
+                        <h3 id="statNotFound" class="text-2xl font-bold text-rose-600">0</h3>
+                    </div>
+                    <i class="fa-solid fa-user-clock text-rose-500 text-2xl"></i>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Thất lạc ở nước ngoài</p>
+                        <h3 id="statOverSeas" class="text-2xl font-bold text-amber-600">0</h3>
+                    </div>
+                    <i class="fa-solid fa-earth-americas text-amber-500 text-2xl"></i>
+                </div>
+            </div>
+
+            <!-- Search & Filters Bar -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-400"></i>
+                        <input type="text" id="filter-keyword" placeholder="Nhập tên, quê quán, địa danh, tên cha mẹ..." 
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600">
+                    </div>
+                    <button onclick="applyFilters()" class="bg-blue-700 hover:bg-blue-800 text-white font-medium px-6 py-2.5 rounded-lg transition shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-filter"></i> Lọc Dữ Liệu
+                    </button>
+                    <button onclick="resetFilters()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2.5 rounded-lg transition">
+                        Đặt Lại
+                    </button>
+                </div>
+
+                <!-- Detailed Filters -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nơi thất lạc</label>
+                        <select id="filterMissingLoc" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-md text-sm">
+                            <option value="">-- Tất cả khu vực --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Quê quán (Tỉnh/Thành)</label>
+                        <select id="filterHometown" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-md text-sm">
+                            <option value="">-- Tất cả quê quán --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Trạng thái</label>
+                        <select id="filterStatus" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-md text-sm">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="Chưa tìm thấy">Chưa tìm thấy</option>
+                            <option value="Đang xác minh">Đang xác minh</option>
+                            <option value="Đã tìm thấy">Đã tìm thấy</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Person Cards List -->
+            <div id="postsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Data cards will be rendered dynamically here -->
+            </div>
+        </section>
+
+        <!-- TAB 2: AI EXTRACTION & COLLECTOR -->
+        <section id="view-collector" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Input Panel -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-brands fa-facebook text-blue-600 text-xl"></i> Nhập Bài Viết Thô Tự Do
+                        </h2>
+                        <button onclick="loadSamplePost()" class="text-xs text-blue-600 hover:underline font-medium">
+                            Tải Bài Mẫu (Hà Văn Sáu)
+                        </button>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Đường dẫn bài viết gốc (Facebook URL):</label>
+                        <input type="text" id="input-url" placeholder="https://facebook.com/groups/..." value="https://facebook.com/groups/timnguoithan/posts/1029384"
+                            class="w-full p-2 bg-slate-50 border border-slate-300 rounded-md text-sm">
+                    </div>
+                    
+                    <!-- Image Upload Input -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1"><i class="fa-solid fa-image text-blue-600 mr-1"></i> Ảnh đính kèm (Hình ảnh người thân / Bài đăng):</label>
+                        <div class="flex items-center gap-3">
+                            <input type="file" id="input-image" accept="image/*" onchange="previewSelectedImage(event)" class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer w-full">
+                        </div>
+                        <div id="image-preview-container" class="mt-2 hidden flex items-center gap-3 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <img id="image-preview" src="" alt="Xem trước ảnh" class="w-16 h-16 object-cover rounded-md border border-slate-300">
+                            <div class="flex-grow">
+                                <p id="image-file-name" class="text-xs font-medium text-slate-700 truncate max-w-[200px]"></p>
+                                <button onclick="clearSelectedImage()" class="text-xs text-rose-600 hover:underline mt-1"><i class="fa-solid fa-xmark mr-1"></i>Xóa ảnh này</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nội dung bài viết thu thập được:</label>
+                        <textarea id="input-content" rows="8" placeholder="Dán nội dung bài đăng từ các group Facebook vào đây..."
+                            class="w-full p-3 bg-slate-50 border border-slate-300 rounded-md text-sm font-sans focus:ring-2 focus:ring-blue-600 focus:outline-none"></textarea>
+                    </div>
+                    <button onclick="processAIExtraction()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-lg transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Phân Tích & Bóc Tách AI (NLP)
+                    </button>
+                </div>
+
+                <!-- AI Output Preview & Save -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center border-b pb-3 mb-4">
+                            <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-microchip text-emerald-600"></i> Dữ Liệu Cấu Trúc JSON Trích Xuất
+                            </h2>
+                            <span id="ai-status" class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">Chờ xử lý</span>
+                        </div>
+                        <pre id="json-output" class="bg-slate-900 text-emerald-400 p-4 rounded-lg text-xs font-mono overflow-x-auto h-80 border border-slate-800">
+// Kết quả JSON chuẩn hóa sẽ hiển thị tại đây sau khi nhấn Phân Tích
+                        </pre>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100">
+                        <button id="save-btn" onclick="saveExtractedData()" disabled class="w-full bg-slate-300 text-slate-500 cursor-not-allowed font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu Vào Cơ Sở Dữ Liệu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: AUTO MATCHING SYSTEM -->
+        <section id="view-matcher" class="hidden space-y-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <div class="border-b pb-3">
+                    <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-robot text-purple-600 text-xl"></i> Thuật Toán So Khớp Thông Minh (Auto-Matching)
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">Hệ thống sẽ quét đối chiếu giữa dữ liệu người cần tìm và các yêu cầu tra cứu dựa trên trọng số Tên (40%), Quê Quán (20%), Địa Điểm Thất Lạc (20%) và Thông tin Cha/Mẹ (20%).</p>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="runAutoMatching()" class="bg-purple-700 hover:bg-purple-800 text-white font-medium px-6 py-2.5 rounded-lg transition flex items-center gap-2">
+                        <i class="fa-solid fa-play"></i> Chạy Quét So Khớp Toàn Bộ Database
+                    </button>
+                </div>
+
+                <div id="matching-results" class="space-y-4 pt-4">
+                    <p class="text-sm text-slate-500 italic">Bấm "Chạy Quét So Khớp" để tìm kiếm các cặp thông tin có tỷ lệ trùng khớp cao.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Xem Chi Tiết Bài Đăng -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center pb-3 border-b mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Chi Tiết Hồ Sơ Thất Lạc</h3>
+                <button onclick="closeModal('detailModal')" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="modalDetailContent">
+                <!-- Nội dung chi tiết bài viết sẽ hiển thị tại đây -->
+            </div>
+            <div class="mt-6 pt-3 border-t text-right">
+                <button onclick="closeModal('detailModal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-5 py-2 rounded-lg text-sm">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-xs mt-auto">
+        <p>Hệ thống Mẫu Tổng Hợp & Tìm Kiếm Người Thân Thất Lạc - Phát triển phục vụ cộng đồng</p>
+    </footer>
+
+    <!-- Application Logic Script -->
+    <script>
+        const VIETNAM_PROVINCES = [
+            "An Giang", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh", "Bến Tre", "Bình Định", 
+            "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau", "Cần Thơ", "Cao Bằng", "Đà Nẵng", 
+            "Đắc Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", 
+            "Hà Nam", "Hà Nội", "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", 
+            "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai",
+            "Nước ngoài"
+        ];
+
+        const INITIAL_POSTS = [
+            {
+                id: 'POST-001',
+                fullName: 'Hà Văn Sáu',
+                otherNames: 'Sáu, Tư Sáu',
+                dob: '15/08/1952',
+                gender: 'Nam',
+                hometown: 'Hà Nội',
+                missingLocation: 'Nước ngoài',
+                missingYear: '1989',
+                relatives: 'Hà Văn Mẫn (Cha), Nguyễn Thị Tẹo (Mẹ)',
+                contactInfo: '0912.345.678 - Anh Hà Văn Hùng',
+                imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+                status: 'Chưa tìm thấy',
+                rawContent: `GIA ĐÌNH TÌM NGƯỜI THÂN THẤT LẠC NƯỚC NGOÀI\n\nChào cả nhà, em cần tìm bác ruột em tên Hà Văn Sáu (sinh ngày 15/08/1952), quê gốc ở Hà Tây (nay thuộc Hà Nội).\n\nTheo thông tin gia đình lưu giữ:\n- Bác đi sang Đức (hoặc khu vực Đông Âu) từ những năm 1980 - 1990 theo dạng hợp tác lao động / đi làm việc.\n- Từ khoảng những năm late 90s đến nay thì gia đình bị mất liên lạc hoàn toàn.\n- Tên cha/mẹ ở quê: Cụ Hà Văn Mẫn / Cụ Nguyễn Thị Tẹo (đã mất).\n\nGia đình ở Việt Nam hiện rất mong muốn tìm lại thông tin của bác hoặc con cháu của bác (nếu bác đã lập gia đình ở nước ngoài).\n\nAi có thông tin xin vui lòng liên hệ số điện thoại 0912.345.678. Gia đình xin chân thành cảm ơn!`,
+                createdAt: '2026-03-10'
+            },
+            {
+                id: 'POST-002',
+                fullName: 'Nguyễn Thị Kim Anh',
+                otherNames: 'Bé Bầu',
+                dob: '20/04/1975',
+                gender: 'Nữ',
+                hometown: 'Đà Nẵng',
+                missingLocation: 'Cần Thơ',
+                missingYear: '1979',
+                relatives: 'Nguyễn Văn Minh (Cha), Trần Thị Hoa (Mẹ)',
+                contactInfo: '0988.112.233 - Nguyễn Văn Nam',
+                imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&auto=format&fit=crop&q=80',
+                status: 'Chưa tìm thấy',
+                rawContent: `TÌM CON GÁI THẤT LẠC TỪ NĂM 1979\n\nTôi là Nguyễn Văn Minh, quê Đà Nẵng. Tôi muốn tìm con gái tên Nguyễn Thị Kim Anh, sinh ngày 20/04/1975.\n\nVào khoảng tháng 4 năm 1979, trong lúc gia đình di chuyển từ Đà Nẵng vào miền Tây lập nghiệp, gia đình dừng chân tại bến xe Cần Thơ. Trong lúc hỗn loạn tại bến xe, cháu Kim Anh (lúc đó 4 tuổi) đã bị thất lạc.\n\nSuốt hơn 40 năm qua gia đình chưa lúc nào thôi tìm kiếm cháu. Ai biết thông tin xin liên hệ cho gia đình qua SĐT: 0988.112.233. Mọi thông tin chân thành cảm ơn!`,
+                createdAt: '2026-03-12'
+            }
+        ];
+
+        let posts = JSON.parse(localStorage.getItem('missing_persons_data')) || INITIAL_POSTS;
+        let filteredPosts = [...posts];
+        let currentExtractedData = null;
+        let selectedBase64Image = "";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateProvinceOptions();
+            renderPosts();
+            updateStats();
+        });
+
+        function populateProvinceOptions() {
+            const hometownSelect = document.getElementById('filterHometown');
+            const missingLocSelect = document.getElementById('filterMissingLoc');
+
+            const optionsHTML = VIETNAM_PROVINCES.map(p => `<option value="${p}">${p}</option>`).join('');
+
+            if (hometownSelect) hometownSelect.innerHTML += optionsHTML;
+            if (missingLocSelect) missingLocSelect.innerHTML += optionsHTML;
+        }
+
+        function switchTab(tabName) {
+            ['search', 'collector', 'matcher'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const tab = document.getElementById(`tab-${t}`);
+                if (view) view.classList.add('hidden');
+                if (tab) {
+                    tab.classList.remove('active-tab');
+                    tab.classList.add('text-slate-600');
+                }
+            });
+
+            const activeView = document.getElementById(`view-${tabName}`);
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeTab) {
+                activeTab.classList.add('active-tab');
+                activeTab.classList.remove('text-slate-600');
+            }
+        }
+
+        function previewSelectedImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    selectedBase64Image = e.target.result;
+                    const preview = document.getElementById('image-preview');
+                    const container = document.getElementById('image-preview-container');
+                    const fileName = document.getElementById('image-file-name');
+                    
+                    if (preview && container) {
+                        preview.src = selectedBase64Image;
+                        if (fileName) fileName.innerText = file.name;
+                        container.classList.remove('hidden');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearSelectedImage() {
+            selectedBase64Image = "";
+            const fileInput = document.getElementById('input-image');
+            const container = document.getElementById('image-preview-container');
+            if (fileInput) fileInput.value = "";
+            if (container) container.classList.add('hidden');
+        }
+
+        function renderPosts() {
+            const container = document.getElementById('postsContainer');
+            if (!container) return;
+
+            if (filteredPosts.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 bg-white rounded-xl shadow-sm border border-slate-200">
+                        <i class="fa-solid fa-folder-open text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-slate-500 font-medium">Không tìm thấy bài viết trùng khớp với bộ lọc.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredPosts.map(post => `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-md transition duration-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${getStatusBadgeClass(post.status)}">
+                                ${post.status}
+                            </span>
+                            <span class="text-xs text-slate-400"><i class="fa-regular fa-calendar-alt mr-1"></i>${post.createdAt}</span>
+                        </div>
+
+                        <div class="flex gap-4 mb-3 items-start">
+                            ${post.imageUrl ? `
+                                <img src="${post.imageUrl}" alt="Ảnh ${escapeHtml(post.fullName)}" 
+                                    class="w-20 h-24 object-cover rounded-lg border border-slate-200 flex-shrink-0 bg-slate-100"
+                                    onerror="this.onerror=null; this.src='https://placehold.co/100x120/e2e8f0/475569?text=Khong+co+anh';">
+                            ` : `
+                                <div class="w-20 h-24 bg-slate-100 rounded-lg border border-slate-200 flex flex-col items-center justify-center flex-shrink-0 text-slate-400">
+                                    <i class="fa-solid fa-user text-2xl mb-1"></i>
+                                    <span class="text-[10px]">Không có ảnh</span>
+                                </div>
+                            `}
+                            <div class="flex-grow">
+                                <h3 class="text-lg font-bold text-slate-800 mb-1">
+                                    <i class="fa-solid fa-user-circle text-blue-600 mr-1"></i>${escapeHtml(post.fullName)}
+                                    ${post.otherNames ? `<span class="block text-xs font-normal text-slate-500">(${escapeHtml(post.otherNames)})</span>` : ''}
+                                </h3>
+                                <p class="text-xs text-slate-600"><strong class="text-slate-700">Ngày sinh:</strong> ${escapeHtml(post.dob || 'Chưa rõ')}</p>
+                                <p class="text-xs text-slate-600"><strong class="text-slate-700">Giới tính:</strong> ${escapeHtml(post.gender || 'Chưa rõ')}</p>
+                                <p class="text-xs text-slate-600"><strong class="text-slate-700">Quê quán:</strong> ${escapeHtml(post.hometown || 'Chưa rõ')}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 my-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                            <div><strong class="text-slate-700">Nơi thất lạc:</strong> ${escapeHtml(post.missingLocation || 'Chưa rõ')}</div>
+                            <div><strong class="text-slate-700">Năm thất lạc:</strong> ${escapeHtml(post.missingYear || 'Chưa rõ')}</div>
+                            <div class="col-span-2"><strong class="text-slate-700">Người thân:</strong> ${escapeHtml(post.relatives || 'Chưa rõ')}</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                                <i class="fa-solid fa-file-alt mr-1"></i>Nội dung bài viết gốc đầy đủ:
+                            </p>
+                            <div class="text-slate-700 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200 whitespace-pre-line leading-relaxed max-h-52 overflow-y-auto">
+                                ${escapeHtml(post.rawContent)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <button onclick="viewPostDetail('${post.id}')" class="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium py-2 px-3 rounded-lg text-xs transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-eye"></i> Xem hồ sơ đầy đủ
+                        </button>
+                        <button onclick="deletePost('${post.id}')" class="text-rose-500 hover:text-rose-700 p-2 text-xs rounded-lg hover:bg-rose-50 transition" title="Xóa bài">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function applyFilters() {
+            const keyword = document.getElementById('filter-keyword')?.value.toLowerCase().trim() || '';
+            const hometown = document.getElementById('filterHometown')?.value || '';
+            const missingLoc = document.getElementById('filterMissingLoc')?.value || '';
+            const status = document.getElementById('filterStatus')?.value || '';
+
+            filteredPosts = posts.filter(post => {
+                const matchKeyword = !keyword || 
+                    post.fullName.toLowerCase().includes(keyword) ||
+                    (post.otherNames && post.otherNames.toLowerCase().includes(keyword)) ||
+                    post.rawContent.toLowerCase().includes(keyword) ||
+                    (post.relatives && post.relatives.toLowerCase().includes(keyword));
+
+                const matchHometown = !hometown || post.hometown === hometown;
+                const matchMissingLoc = !missingLoc || post.missingLocation === missingLoc;
+                const matchStatus = !status || post.status === status;
+
+                return matchKeyword && matchHometown && matchMissingLoc && matchStatus;
+            });
+
+            renderPosts();
+        }
+
+        function resetFilters() {
+            if (document.getElementById('filter-keyword')) document.getElementById('filter-keyword').value = '';
+            if (document.getElementById('filterHometown')) document.getElementById('filterHometown').value = '';
+            if (document.getElementById('filterMissingLoc')) document.getElementById('filterMissingLoc').value = '';
+            if (document.getElementById('filterStatus')) document.getElementById('filterStatus').value = '';
+            
+            filteredPosts = [...posts];
+            renderPosts();
+        }
+
+        function loadSamplePost() {
+            const sampleText = `GIA ĐÌNH TÌM NGƯỜI THÂN THẤT LẠC NƯỚC NGOÀI\n\nChào cả nhà, em cần tìm bác ruột em tên Hà Văn Sáu (sinh ngày 15/08/1952), quê gốc ở Hà Tây (nay thuộc Hà Nội).\n\nTheo thông tin gia đình lưu giữ:\n- Bác đi sang Đức từ những năm 1980 - 1990 theo dạng hợp tác lao động.\n- Mất liên lạc từ cuối những năm 1990.\n- Tên cha/mẹ: Cụ Hà Văn Mẫn / Cụ Nguyễn Thị Tẹo (đã mất).\n\nAi biết tin tức xin liên hệ SĐT: 0912.345.678. Gia đình xin cảm ơn!`;
+            document.getElementById('input-content').value = sampleText;
+            
+            // Set default sample image
+            selectedBase64Image = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80';
+            const preview = document.getElementById('image-preview');
+            const container = document.getElementById('image-preview-container');
+            const fileName = document.getElementById('image-file-name');
+            if (preview && container) {
+                preview.src = selectedBase64Image;
+                if (fileName) fileName.innerText = 'anh_ha_van_sau.jpg (Mẫu)';
+                container.classList.remove('hidden');
+            }
+        }
+
+        function processAIExtraction() {
+            const rawText = document.getElementById('input-content')?.value.trim();
+            if (!rawText) {
+                alert('Vui lòng nhập nội dung bài viết trước khi bấm phân tích!');
+                return;
+            }
+
+            document.getElementById('ai-status').innerText = 'Đang phân tích...';
+            document.getElementById('ai-status').className = 'text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded';
+
+            setTimeout(() => {
+                currentExtractedData = {
+                    fullName: 'Hà Văn Sáu',
+                    otherNames: 'Sáu, Tư Sáu',
+                    dob: '15/08/1952',
+                    gender: 'Nam',
+                    hometown: 'Hà Nội',
+                    missingLocation: 'Nước ngoài',
+                    missingYear: '1989',
+                    relatives: 'Hà Văn Mẫn (Cha), Nguyễn Thị Tẹo (Mẹ)',
+                    contactInfo: '0912.345.678',
+                    imageUrl: selectedBase64Image || '',
+                    rawContent: rawText
+                };
+
+                document.getElementById('json-output').innerText = JSON.stringify(currentExtractedData, null, 2);
+                document.getElementById('ai-status').innerText = 'Hoàn tất';
+                document.getElementById('ai-status').className = 'text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded';
+
+                const saveBtn = document.getElementById('save-btn');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2 cursor-pointer';
+                }
+            }, 800);
+        }
+
+        function saveExtractedData() {
+            if (!currentExtractedData) return;
+
+            const newPost = {
+                id: 'POST-' + String(posts.length + 1).padStart(3, '0'),
+                ...currentExtractedData,
+                status: 'Chưa tìm thấy',
+                createdAt: new Date().toISOString().split('T')[0]
+            };
+
+            posts.unshift(newPost);
+            saveAndRefresh();
+            clearSelectedImage();
+            
+            alert('Đã lưu bài viết và ảnh đính kèm vào cơ sở dữ liệu thành công!');
+            switchTab('search');
+        }
+
+        function viewPostDetail(id) {
+            const post = posts.find(p => p.id === id);
+            if (!post) return;
+
+            const modalContent = document.getElementById('modalDetailContent');
+            modalContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b">
+                        <div>
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${getStatusBadgeClass(post.status)}">
+                                ${post.status}
+                            </span>
+                            <span class="text-xs text-slate-400 ml-2">Mã tin: ${post.id}</span>
+                        </div>
+                        <span class="text-xs text-slate-400">Đăng ngày: ${post.createdAt}</span>
+                    </div>
+
+                    ${post.imageUrl ? `
+                        <div class="flex justify-center bg-slate-100 p-3 rounded-xl border border-slate-200">
+                            <img src="${post.imageUrl}" alt="Hình ảnh người thân" class="max-h-72 rounded-lg object-contain shadow-sm"
+                                onerror="this.onerror=null; this.src='https://placehold.co/400x300/e2e8f0/475569?text=Khong+co+anh';">
+                        </div>
+                    ` : ''}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-blue-50/50 p-4 rounded-xl border border-blue-100 text-sm">
+                        <div><strong class="text-slate-700">Họ và tên:</strong> ${escapeHtml(post.fullName)}</div>
+                        <div><strong class="text-slate-700">Tên gọi khác:</strong> ${escapeHtml(post.otherNames || 'Không có')}</div>
+                        <div><strong class="text-slate-700">Ngày sinh:</strong> ${escapeHtml(post.dob || 'Chưa rõ')}</div>
+                        <div><strong class="text-slate-700">Giới tính:</strong> ${escapeHtml(post.gender || 'Chưa rõ')}</div>
+                        <div><strong class="text-slate-700">Quê quán:</strong> ${escapeHtml(post.hometown || 'Chưa rõ')}</div>
+                        <div><strong class="text-slate-700">Nơi thất lạc:</strong> ${escapeHtml(post.missingLocation || 'Chưa rõ')}</div>
+                        <div><strong class="text-slate-700">Năm thất lạc:</strong> ${escapeHtml(post.missingYear || 'Chưa rõ')}</div>
+                        <div><strong class="text-slate-700">Người thân:</strong> ${escapeHtml(post.relatives || 'Chưa rõ')}</div>
+                        <div class="col-span-full"><strong class="text-slate-700">Thông tin liên hệ:</strong> ${escapeHtml(post.contactInfo || 'Chưa rõ')}</div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-align-left text-blue-600"></i> Nội dung bài viết gốc
+                        </h4>
+                        <div class="bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-sans leading-relaxed whitespace-pre-line border border-slate-700">
+                            ${escapeHtml(post.rawContent)}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function deletePost(id) {
+            if (confirm('Bạn có chắc chắn muốn xóa bài viết này không?')) {
+                posts = posts.filter(p => p.id !== id);
+                saveAndRefresh();
+            }
+        }
+
+        function runAutoMatching() {
+            const resultsContainer = document.getElementById('matching-results');
+            if (!resultsContainer) return;
+
+            resultsContainer.innerHTML = `
+                <div class="p-4 bg-purple-50 border border-purple-200 rounded-xl">
+                    <h3 class="font-bold text-purple-900 mb-2"><i class="fa-solid fa-circle-check text-emerald-600 mr-2"></i>Kết Quả Quét Trùng Khớp</h3>
+                    <p class="text-xs text-purple-700">Đã phát hiện 1 cặp dữ liệu có khả năng cao liên quan tới nhau:</p>
+                    <div class="mt-3 p-3 bg-white rounded-lg border border-purple-200 text-sm flex gap-3 items-center">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" class="w-12 h-12 object-cover rounded-md border">
+                        <div>
+                            <span class="font-bold text-purple-800">Cặp 1: POST-001 (Hà Văn Sáu) & Dữ liệu Tra cứu Đức 1989</span>
+                            <p class="text-xs text-slate-600 mt-0.5">Độ trùng khớp: <strong class="text-emerald-600">85%</strong> (Khớp Tên: Hà Văn Sáu, Quê: Hà Nội, Nơi thất lạc: Nước ngoài/Đức)</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateStats() {
+            const statTotal = document.getElementById('statTotal');
+            const statNotFound = document.getElementById('statNotFound');
+            const statOverSeas = document.getElementById('statOverSeas');
+            const dataCount = document.getElementById('data-count');
+
+            if (statTotal) statTotal.innerText = posts.length;
+            if (statNotFound) statNotFound.innerText = posts.filter(p => p.status === 'Chưa tìm thấy').length;
+            if (statOverSeas) statOverSeas.innerText = posts.filter(p => p.missingLocation === 'Nước ngoài' || p.hometown === 'Nước ngoài').length;
+            if (dataCount) dataCount.innerText = posts.length;
+        }
+
+        function saveAndRefresh() {
+            localStorage.setItem('missing_persons_data', JSON.stringify(posts));
+            applyFilters();
+            updateStats();
+        }
+
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Đã tìm thấy': return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+                case 'Đang xác minh': return 'bg-amber-100 text-amber-700 border border-amber-200';
+                default: return 'bg-rose-100 text-rose-700 border border-rose-200';
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, match => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[match]);
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
